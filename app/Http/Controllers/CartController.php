@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Cartalyst\Stripe\Laravel\Facades\Stripe;
 use App\Models\Order;
 use App\Models\User;
-use App\Mail\Sendmail;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
+use Stripe\Stripe;
+use Stripe\Charge;
+
 
 
 class CartController extends Controller
@@ -23,7 +24,7 @@ class CartController extends Controller
         }
         $cart->add($product);
         session()->put('cart',$cart);
-        notify()->success('Product added to cart');
+        notify()->success(trans('home_trans.Product added to cart'));
         return redirect()->back();
 
     }
@@ -63,56 +64,56 @@ class CartController extends Controller
         return redirect()->back();
     }
 
-    public function checkout($amount){
+    public function checkout(){
         if (session()->has('cart')) {
             $cart = new Cart(session()->get('cart'));
-
         }else{
             $cart=null;
         }
-        return view('frontend.payment',compact('amount','cart'));
+        return view('frontend.shop-checkout',compact('cart'));
 
     }
-    public function charge(Request $request){
-       $charge =Stripe::charges()->create([
-           'currency'=>"USD",
-           'source'=>$request->stripeToken,
-           'amount'=>$request->amount,
-           'description'=>'Test',
-        ]);
-       $chargeId=$charge['id'];
-       if (session()->has('cart')){
-           $cart=new Cart(session()->get('cart'));
-       }else{
-           $cart=null;
-       }
-       \Mail::to(auth()->user()->email)->send(new Sendmail($cart));
-       if($chargeId){
-           auth()->user()->order()->create([
-              'cart'=>serialize(session()->get('cart'))
-           ]);
-           session()->forget('cart');
-           notify()->success('Transaction completed');
-           return redirect()->to('/');
-       }else{
-           return redirect()->back();
-       }
+    public function charge(Request $request)
+    {
+        Stripe::setApiKey(config('services.stripe.secret'));
+        $price= session()->get('cart')->totalPrice;
+        try {
+           $charge= Charge::create([
+                'currency'=>'USD',
+                'source'=>$request->stripeToken,
+                'amount'=>$price,
+                'description'=>'Test',
+            ]);
+           $chargeId = $charge['id'];
+           if ($chargeId){
+               auth(guard: 'user')->user()->orders()->create([
+                   'cart'=>serialize(session()->get('cart'))
+               ]);
+               session()->forget('cart');
+               notify()->success('Payment successful!');
+               return redirect()->to('/');
+           }else{
+               notify()->error('Error!');
+               return redirect()->back();
+           }
 
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
+
     public function order(){
-        $orders = auth()->user()->order;
+        $orders = auth()->user()->orders;
         $carts =$orders->transform(function($cart,$key){
             return unserialize($cart->cart);
-
         });
-        return view('frontend.industries_orders',compact('carts'));
+        return view('frontend.show-orders',compact('carts'));
 
     }
     //for admin
     public function userOrder(){
-        $orders=Order::latest()->get();
-        return view('admin.order.index',compact('orders'));
-
+            $orders = Order::query()->latest()->paginate(5);
+            return view('cms.products_orders.index',compact('orders'));
     }
     public function viewUserOrder($userid,$orderid){
         $user = User::query()->find($userid);
@@ -121,7 +122,7 @@ class CartController extends Controller
             return unserialize($cart->cart);
 
         });
-        return view('admin.order.show',compact('carts'));
+        return view('cms.products_orders.show',compact('carts'));
 
     }
 }
