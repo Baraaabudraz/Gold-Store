@@ -19,44 +19,6 @@ class ProfileController extends Controller
         $users=Auth::user();
         return view('frontend.profile',compact('users'));
     }
-
-    public function edit_industry($id)
-    {
-            $categories=Category::get();
-            $industry=Auth::user()->findOrFail($id);
-            return view('frontend.edit-industry-profile',compact('industry','categories'));
-    }
-    public function update_industry(Request $request, $id){
-
-        $request->request->add(['id'=>$id]);
-        $request->validate([
-            'name.*'  =>  'required',
-            'email'    =>  'required|string|email|unique:industries,email,'.$id,
-            'password'=>'required|string',
-            'state' =>  'required|string',
-            'category_id'       =>'required|exists:categories,id',
-            'industrial_area'   =>  'required|string',
-            'industry_phone'    =>  'required|string|numeric|unique:industries,industry_phone,'.$id,
-            'salesperson_phone' =>  'required|string|numeric|unique:industries,salesperson_phone,'.$id,
-            'salesperson_email' =>  'required|string|email|unique:industries,salesperson_email,'.$id,
-            'address'   =>  'required|string',
-            'website'   =>  'string|url|nullable',
-            'work_time.*'=>'required|string',
-        ]);
-        $data=$request->only([
-            'name','email','password'=>Hash::make($request->password),'state','industrial_area','industry_phone','salesperson_phone',
-            'salesperson_email','address', 'website', 'category_id',
-        ]);
-        $data['work_time']=json_encode($request->get('work_time'));
-        $industry=Industry::query()->find($id);
-        $industry->update($data);
-        session()->flash('alert-type','alert-success');
-        session()->flash('message',trans('home_trans.Profile Edit successfully'));
-        return redirect()->back();
-
-    }
-
-
     public function edit($id)
     {
         //
