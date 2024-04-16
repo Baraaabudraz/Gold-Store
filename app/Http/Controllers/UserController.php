@@ -34,7 +34,7 @@ class UserController extends Controller
             'password'=>'required|string|min:8',
             'address'=>'required|string|min:3|max:50',
             'country'=>'required',
-            'mobile' =>'required|numeric',
+            'mobile' =>'required|numeric|unique:users',
         ]);
         $users=new User();
         $users->name=$request->get('name');
@@ -46,7 +46,6 @@ class UserController extends Controller
         $users->country=$request->get('country');
         $isSaved=$users->save();
         if ($isSaved){
-            Mail::queue(new NewUserEmail($users));
             session()->flash('alert-type','alert-success');
             session()->flash('message',trans('dashboard_trans.You have been successfully registered, log in please'));
             return redirect()->back();
