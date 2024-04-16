@@ -28,7 +28,7 @@ class Authenticate extends Middleware
     {
         if (! $request->expectsJson()) {
             if (Arr::first($this->guards) === 'user') {
-                return route('selection');
+                return route('loginView');
             }else{
                 return route('admin.login_view');
             }
