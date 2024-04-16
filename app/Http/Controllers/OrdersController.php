@@ -14,13 +14,9 @@ class OrdersController extends Controller
     {
         if (Auth::guard('admin')->check()){
             $orders=Order::query()->latest()->paginate(10);
-        }else{
-            $orders = Order::query()->with('product')
-                ->where('industry_id',Auth::id())
-                ->latest()->paginate(10);
+            return view('cms.products_orders.index',compact('orders'));
         }
 
-        return view('cms.products_orders.index',compact('orders'));
     }
 
     public function create()
@@ -33,7 +29,7 @@ class OrdersController extends Controller
 
     public function show($id)
     {
-        $order = Order::with('product')->where('user_id',$id)->latest()->paginate(5);
+       $order = Order::with('product')->where('user_id',$id)->latest()->paginate(5);
         return view('frontend.show-orders',compact('order'));
     }
 
