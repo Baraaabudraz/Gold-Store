@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\AuthTrait;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
@@ -19,8 +18,8 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
-    public function loginForm($type){
-        return view('cms.user.auth.login',compact('type'));
+    public function loginForm(){
+        return view('cms.user.auth.login');
     }
 
     public function login(Request $request)
@@ -31,6 +30,8 @@ class LoginController extends Controller
         ]);
         $credentials=$request->only('email','password');
         if (Auth::guard('user')->attempt($credentials)) {
+//            smilify('success', trans('home_trans.You have successfully logged in'));
+            notify()->success(trans('home_trans.You have successfully logged in'));
             return redirect()->route('home');
 
         }else{
@@ -43,6 +44,7 @@ class LoginController extends Controller
     public function logout(Request $request,$type){
         Auth::guard('user')->logout();
         $request->session()->invalidate();
+        notify()->success(trans('home_trans.You have successfully logged out'));
         return redirect()->route('loginView',$type);
     }
 
