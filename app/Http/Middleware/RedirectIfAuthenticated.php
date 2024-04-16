@@ -55,6 +55,7 @@ class RedirectIfAuthenticated
   {
 
       if (auth('user')->check()) {
+          notify()->success(trans('home_trans.You have successfully logged in'));
           return redirect(RouteServiceProvider::HOME);
       }
 
