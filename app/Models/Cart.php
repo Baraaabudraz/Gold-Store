@@ -1,12 +1,13 @@
 <?php
 namespace App\Models;
 
-class Cart{
+use Illuminate\Database\Eloquent\Model;
 
+class Cart extends Model
+{
     public $items = [];
     public $totalQty;
     public $totalPrice;
-
 
     public function __construct($cart=null){
         if($cart){
@@ -27,31 +28,32 @@ class Cart{
             'price'=>$product->price,
             'description'=>$product->description,
             'qty'=>0,
-            'image'=>$product->image
-
+            'image'=>$product->image,
+            'totalPrice' => $product->price,
         ];
-        if(!array_key_exists($product->id,$this->items)){
+
+        if(!array_key_exists($product->id, $this->items)){
             $this->items[$product->id] = $item;
-            $this->totalQty+=1;
-            $this->totalPrice+=$product->price;
-        }else{
-            $this->totalQty+=1;
-            $this->totalPrice+=$product->price;
-
+            $this->totalQty += 1;
+            $this->totalPrice += $product->price;
+        } else {
+            $this->totalQty += 1;
+            $this->totalPrice += $product->price;
         }
-        $this->items[$product->id]['qty']+=1;
+
+        $this->items[$product->id]['qty'] += 1;
     }
 
-    public function updateQty($id,$qty){
-        $this->totalQty-=$this->items[$id]['qty'];
-        $this->totalPrice-=$this->items[$id]['price']*$this->items[$id]['qty'];
-        //add the item with new qty
+    public function updateQty($id, $qty){
+        $this->totalQty -= $this->items[$id]['qty'];
+        $this->totalPrice -= $this->items[$id]['totalPrice']; // تحديث السعر الإجمالي بناءً على سعر المنتج الواحد
+        //add the item with new qty for one product
         $this->items[$id]['qty'] = $qty;
-        $this->totalQty+=$qty;
-        $this->totalPrice+=$this->items[$id]['price']*$qty;
-
+        $this->items[$id]['totalPrice'] = $this->items[$id]['price'] * $qty;
+        // تحديث الكمية والسعر الإجمالي للسلة
+        $this->totalQty += $qty;
+        $this->totalPrice += $this->items[$id]['totalPrice'];
     }
-
 
     public function remove($id){
         if(array_key_exists($id,$this->items)){
